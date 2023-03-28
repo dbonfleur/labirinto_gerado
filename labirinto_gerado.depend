@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1679861730 source:c:\users\danib\desktop\projetos - linguagem c\labirinto_gerado\main.c
+	<stdio.h>
+	<stdlib.h>
+	<time.h>
+	<conio.h>
+	<windows.h>
+
