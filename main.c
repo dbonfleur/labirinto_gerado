@@ -167,37 +167,53 @@ void informaAltLarg() {
 }
 
 void aleatorizaCaminhos(Labirinto* lab) {
+    Celula* viz;
     int aletLarg, aletAlt;
-    int coef = (LARGURA * ALTURA) * 0.25;
+    int coef = (LARGURA * ALTURA) * 0.2;
     int marcado[LARGURA * ALTURA];
+
     for(int i=0; i<(LARGURA*ALTURA); i++)
         marcado[i] = 0;
-    system("pause");
+
     for(int i=0; i<coef; i++) {
-        aletLarg = 1 + (rand() % LARGURA - 1);
-        aletAlt = 1 + (rand() % ALTURA - 1);
+        aletLarg = 2 + (rand() % (LARGURA - 2));
+        aletAlt = 2 + (rand() % (ALTURA - 2));
+
+        Celula* atual = &lab->Celulas[aletLarg][aletAlt];
+
         if(marcado[aletLarg * aletAlt] != 1) {
             int count = 0;
             int paredes[4];
-            for(int j=0; j<4; j++)
-                if(&lab->Celulas[aletLarg][aletAlt].paredes[j])
-                    paredes[count++] = j;
-            int viz = rand() % count;
-            if(count >= 2) {
-                switch(paredes[viz]) {
-                    case 0:     //Norte
 
-                        removeParede(&lab->Celulas[aletLarg][aletAlt], &lab->Celulas[aletLarg][aletAlt-1]);
+            for(int j=0; j<4; j++) {
+
+                if(atual->paredes[j]) {
+                    paredes[count] = j;
+                    count++;
+                }
+            }
+
+            int vizRand = rand() % count;
+            if(count >= 2) {
+
+                switch(paredes[vizRand]) {
+                    case 0:     //Norte
+                        printf("Norte - aletLarg - %d | aletAlt - %d\n", aletLarg, aletAlt-1);
+                        viz = &lab->Celulas[aletLarg][aletAlt-1];
                         break;
                     case 1:     //Leste
-                        removeParede(&lab->Celulas[aletLarg][aletAlt], &lab->Celulas[aletLarg+1][aletAlt]);
+                        printf("Leste - aletLarg - %d | aletAlt - %d\n", aletLarg+1, aletAlt);
+                        viz = &lab->Celulas[aletLarg+1][aletAlt];
                         break;
                     case 2:     //Sul
-                        removeParede(&lab->Celulas[aletLarg][aletAlt], &lab->Celulas[aletLarg][aletAlt+1]);
+                        printf("Sul - aletLarg - %d | aletAlt - %d\n", aletLarg, aletAlt+1);
+                        viz = &lab->Celulas[aletLarg][aletAlt+1];
                         break;
                     case 3:     //Oeste
-                        removeParede(&lab->Celulas[aletLarg][aletAlt], &lab->Celulas[aletLarg-1][aletAlt]);
+                        printf("Oeste - aletLarg - %d | aletAlt - %d\n", aletLarg-1, aletAlt);
+                        viz = &lab->Celulas[aletLarg-1][aletAlt];
                 }
+                removeParede(atual, viz);
                 /*if(count == 2) {
                     for(int j=0; j<2; j++)
                         if(paredes[j]=!paredes[viz])
@@ -266,6 +282,7 @@ void aleatorizaCaminhos(Labirinto* lab) {
             marcado[aletLarg * aletAlt] = 1;
         }
     }
+
 }
 
 void iniciaLabirinto() {
