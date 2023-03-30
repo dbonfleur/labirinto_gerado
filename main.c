@@ -135,14 +135,16 @@ int randomInicialFinal(int tipo) {
     return rand() % div;
 }
 
-void imprimeMatriz() {
+// Função teste para imprimir a matriz.
+/*void imprimeMatriz() {
     for(int i=0;i<LARGMAT;i++) {
         for(int j=0;j<ALTMAT;j++)
             printf("%d ", matrizLab[i][j]);
         printf("\n");
     }
-}
+}*/
 
+// Função que pede ao usuário altura e largura do labirinto que será gerado.
 void informaAltLarg() {
     do {
         printf("Informe a Altura do labirinto (minimo 5) -> ");
@@ -162,132 +164,69 @@ void informaAltLarg() {
     }while(LARGURA < 5);
     system("cls");
 
-    LARGMAT = ((ALTURA*2)+1);
+    LARGMAT = ((ALTURA*2)+1);   //Como a célula de labirinto tem 1 casa com 4 paredes, a representação disso é 0 rodeado por 1 como parede, que serão removidas aleatóriamente.
     ALTMAT = ((LARGURA*2)+1);
 }
 
+// Função que escolhe algumas casa aleatóriamente, afim de ramificar ainda mais o labirinto e possibilitar vários caminhos que conseguem chegar ao final.
 void aleatorizaCaminhos(Labirinto* lab) {
-    Celula* viz;
+    Celula* viz;                            //Celula vizinha que sera randomizada.
     int aletLarg, aletAlt, vizRand;
-    int coef = (LARGURA * ALTURA) * 0.2;
-    int marcado[LARGURA][ALTURA];
+    int coef = (LARGURA * ALTURA) * 0.15;   //Determina a porcetagem de células que seráo escolhidas aleatóriamente para remover paredes aleatóriamente também.
+    int marcado[LARGURA][ALTURA];           //Matriz auxiliar, para evitar escolher células repetidas.
 
     for(int i=0; i<LARGURA; i++)
         for(int j=0; j<ALTURA;j++)
-            marcado[i][j] = 0;
+            marcado[i][j] = 0;              //Inicializa todas como nao marcado.
 
     for(int i=0; i<coef; i++) {
-        aletLarg = 2 + (rand() % (LARGURA - 2));
-        aletAlt = 2 + (rand() % (ALTURA - 2));
+        aletLarg = 2 + (rand() % (LARGURA - 2));            //Randomiza uma casa em largura na matriz.
+        aletAlt = 2 + (rand() % (ALTURA - 2));              //O mesmo so que em altura.
 
-        Celula* atual = &lab->Celulas[aletLarg][aletAlt];
+        Celula* atual = &lab->Celulas[aletLarg][aletAlt];   //atribui a célula escolhida aleatóriamente.
 
-        if(marcado[aletLarg][aletAlt] != 1) {
+        if(marcado[aletLarg][aletAlt] != 1) {               //Se não for marcado, então prossegue para remoção da parede
             int count = 0;
             int paredes[4];
 
             for(int j=0; j<4; j++) {
-                if(atual->paredes[j]) {
-                    paredes[count] = j;
+                if(atual->paredes[j]) {         //Verifica quais dos 4 pontos da célula tem parede.
+                    paredes[count] = j;         //Caso um dos lados tem, guarda a informação de qual lugar no vetor está a parede.
                     count++;
                 }
             }
 
-            if(count > 2) {
-                vizRand = rand() % count;
-                viz = NULL;
+            if(count >= 2) {                    //Caso tenha mais de 2 paredes, ele remove uma.
+                vizRand = rand() % count;       //Escolhe aleatóriamente um dos 4 lados.
+                viz = NULL;                     //Anula vizinho.
 
-                switch(paredes[vizRand]) {
-                    case 0:     //Norte
+                switch(paredes[vizRand]) {      //Escolhe a parede randomizada sendo 0 -> Norte, 1 -> Leste, 2 -> Sul, 3 -> Oeste
+                    case 0:                     //Norte
                         if((aletAlt+1) > 0)
                             viz = &lab->Celulas[aletLarg][aletAlt-1];
                         break;
-                    case 1:     //Leste
+                    case 1:                     //Leste
                         if((aletLarg+1) < LARGURA)
                             viz = &lab->Celulas[aletLarg+1][aletAlt];
                         break;
-                    case 2:     //Sul
+                    case 2:                     //Sul
                         if((aletAlt+1) < ALTURA)
                             viz = &lab->Celulas[aletLarg][aletAlt+1];
                         break;
-                    case 3:     //Oeste
+                    case 3:                     //Oeste
                         if((aletLarg-1) > 0)
                             viz = &lab->Celulas[aletLarg-1][aletAlt];
                 }
-                if(viz != NULL)
-                    removeParede(atual, viz);
-
-                /*if(count == 2) {
-                    for(int j=0; j<2; j++)
-                        if(paredes[j]=!paredes[viz])
-                            int viz2 = paredes[j];
-                    int flag = rand % 2;
-                    switch(paredes[viz]) {
-                        case 0:     //Norte
-                            switch(viz2) {
-                                case 1:     //Leste
-                                    if(flag)
-
-                                    else
-
-                                    break;
-                                case 2:     //Sul
-                                    if(flag)
-
-                                    else
-
-                                    break;
-                                case 3:     //Oeste
-                                    if(flag)
-
-                                    else
-
-                            }
-                            break;
-                        case 1:     //Leste
-                            switch(viz2) {
-                                case 0:     //Norte
-                                    if(flag)
-
-                                    else
-
-                                    break;
-                                case 2:     //Sul
-
-                                    break;
-                                case 3:     //Oeste
-                            }
-                            break;
-                        case 2:     //Sul
-                            switch(viz2) {
-                                case 0:     //Norte
-
-                                    break;
-                                case 1:     //Leste
-
-                                    break;
-                                case 3:     //Oeste
-                            }
-                            break;
-                        case 3:     //Oeste
-                            switch(viz2) {
-                                case 0:     //Norte
-
-                                    break;
-                                case 1:     //Leste
-
-                                    break;
-                                case 2:     //Sul
-                            }
-                    }
-                }*/
+                if(viz != NULL)                 //Por ironia do destino, as vezes o vizinho vem nulo mesmo, isso evita bug.
+                    removeParede(atual, viz);   //Se por ajuda do universo o vizinho não for nulo, entao ele informa pra função as células para remover a parede.
             }
-            marcado[aletLarg][aletAlt] = 1;
+            marcado[aletLarg][aletAlt] = 1;     //Marca para evitar repetir mes célula.
         }
     }
 
 }
 
+//Função crucial para inicialização da construção  do labirinto gerado automáticamente.
 void iniciaLabirinto() {
     srand(time(NULL));
     informaAltLarg();
@@ -318,12 +257,8 @@ void iniciaLabirinto() {
     gerarLabirinto(&lab, inicio);
     aleatorizaCaminhos(&lab);
     printLabirinto(&lab);
-    /*for(int i=0;i<LARGMAT; i++) {
-        for(int j=0; j<ALTMAT; j++)
-            printf("%d ", matrizLab[i][j]);
-        printf("\n");
-    }
-    system("pause");*/
+    //imprimeMatriz();
+
     for(int i=0; i<LARGURA; i++)
         free(lab.Celulas[i]);
     free(lab.Celulas);
@@ -337,7 +272,7 @@ int testVencer() {
     return 1;
 }
 
-void gotoxy(int x, int y){
+void gotoxy(int x, int y) {
      SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),(COORD){x,y});
 }
 
