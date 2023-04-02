@@ -34,8 +34,9 @@ int LARGURA, ALTURA, LINHAS, COLUNAS;
 int **matrizLab;      // matriz de inteiros, representando o labirinto desenhado numericamente
                       // (1) para paredes, (0) espaços vazios, (2) jogador.
 
-int deslcLinhas[4]  = {0, 1,  0, -1};
-int deslcColunas[4] = {1, 0, -1,  0};
+int deslcLinhas[4]  = {-1, 0, 1,  0};//(norte, leste, sul, oeste)
+int deslcColunas[4] = { 0, 1, 0, -1};//(norte, leste, sul, oeste)
+int dirMatriz[4] =    {4, 5, 6, 7}; //(norte, leste, sul, oeste)
 
 // Função que inicializa as células do labirinto
 void init_Celulas(Labirinto* Labirinto) {
@@ -259,7 +260,7 @@ void iniciaLabirinto() {
     jogador.desenhoy =  ALTURA*2;
 
     matrizLab[(end*2)+1][LARGURA*2] = 0;
-    matrizLab[(end*2)+1][(LARGURA*2)+1] = 4;
+    matrizLab[(end*2)+1][(LARGURA*2)+1] = 3;
     matrizLab[ALTURA*2][(ini*2)+1] = 0;
     matrizLab[(ALTURA*2)+1][(ini*2)+1] = 2;
 
@@ -370,30 +371,31 @@ int jogo() {
 
 bool validacaoProfunda(int labVal[][COLUNAS], int linha, int coluna) {
 
-    if(linha < 0 || linha >= LINHAS || coluna < 0 || coluna >= COLUNAS || labVal[linha][coluna] == 1 || labVal[linha][coluna] == 3)
+    if(linha < 0 || linha >= LINHAS || coluna < 0 || coluna >= COLUNAS || labVal[linha][coluna] == 1 || labVal[linha][coluna] >= 4)
         return false;
 
     return true;
 }
 
-bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna) {
+bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
 
-    //Caso ele esteja na casa aonde contem 4 (representando o final), termina a busca e retorna como possível finalizar o labirinto
-    if(matBusca[linha][coluna] == 4)
+    //Caso ele esteja na casa aonde contem 3 (representando o final), termina a busca e retorna como possível finalizar o labirinto
+    if(matBusca[linha][coluna] == 3)
         return true;
 
-    //Valida a casa aonde ele está operando, se for validada como espaço vazio dentro da matriz e não visitada, marca como vistada representado pelo 3.
+    //Valida a casa aonde ele está operando, se for validada como espaço vazio dentro da matriz e não visitada, marca como vistada representado pela variavel dir, aonde será a direção para onde foi sendo (.
     if(validacaoProfunda(matBusca, linha, coluna))
-        matBusca[linha][coluna] = 3;
+        matBusca[linha][coluna] = dir;
 
     // Exploramos as quatro direções possíveis a partir da posição atual
     for (int i = 0; i < 4; i++) {
         int proxLinha = linha + deslcLinhas[i];
         int proxColuna = coluna + deslcColunas[i];
+        int direcao = dirMatriz[i];
 
         // Se a próxima posição é válida, fazemos a chamada recursiva
         if (validacaoProfunda(matBusca, proxLinha, proxColuna)) {
-            if (buscaProfunda(matBusca, proxLinha, proxColuna)) {
+            if (buscaProfunda(matBusca, proxLinha, proxColuna, direcao)) {
                 return true;
             }
         }
@@ -402,6 +404,67 @@ bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna) {
     // Se nenhuma das direções levou à saída, marcamos a posição como vazia novamente e retornamos falso
     matBusca[linha][coluna] = 0;
     return false;
+}
+
+void opcBuscaCega(int matBusca[][COLUNAS]) {
+    system("cls");
+    if(buscaProfunda(matBusca, jogador.posMaty, jogador.posMatx, dirMatriz[0])) {
+        for(int i=0; i<LINHAS; i++) {
+            for(int j=0; j<COLUNAS; j++) {
+                switch(matBusca[i][j]) {
+                        case 0:
+                            if(j%2 == 0)
+                                printf(" ");
+                            else
+                                printf("  ");
+                            break;
+                        case 1:
+                            if(i%2 == 0) {
+                                if(j%2 == 0)
+                                    printf("+");
+                                else
+                                    printf("--");
+                            } else
+                                if(j%2 == 0)
+                                    printf("|");
+                                else
+                                    printf("++");
+                            break;
+                        case 2:
+                            printf("SS");
+                            break;
+                        case 3:
+                            printf("FF");
+                            break;
+                        case 4:     //Norte
+                            printf("/\\");
+                            break;
+                        case 5:     //Leste
+                            if(j%2 == 0)
+                                printf(">");
+                            else
+                                printf(">>");
+                            break;
+                        case 6:     //Sul
+                            printf("\\/");
+                            break;
+                        case 7:     //Oeste
+                            if(j%2 == 0)
+                                printf("<");
+                            else
+                                printf("<<");
+                }
+            }
+            printf("\n");
+        }
+        for(int i=0; i<LINHAS; i++) {
+            for(int j=0; j<COLUNAS; j++) {
+                printf("%d ", matBusca[i][j]);
+            }
+            printf("\n");
+        }
+    }
+    printf("\n");
 }
 
 bool menu() {
@@ -422,29 +485,7 @@ bool menu() {
                     matBusca[i][j] = matrizLab[i][j];
         switch(opc) {
                 case 1:
-                    system("cls");
-                    if(buscaProfunda(matBusca, jogador.posMaty, jogador.posMatx)) {
-                        for(int i=0; i<LINHAS; i++) {
-                            for(int j=0; j<COLUNAS; j++) {
-                                switch(matBusca[i][j]) {
-                                        case 0:
-                                            printf("  ");
-                                            break;
-                                        case 1:
-                                            printf("##");
-                                            break;
-                                        case 3:
-                                            printf("[]");
-                                            break;
-                                        case 4:
-                                            printf("FF");
-                                }
-                                //printf("%d ", matBusca[i][j]);
-                            }
-                            printf("\n");
-                        }
-
-                    }
+                    opcBuscaCega(matBusca);
                     break;
                 case 2:
                     system("cls");
