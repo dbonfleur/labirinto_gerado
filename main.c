@@ -4,6 +4,7 @@
 #include <locale.h>
 #include <windows.h>
 #include <stdbool.h>
+#define FATORALEATORIO 0.1
 
 typedef struct Jogador {
     int posMatx;
@@ -130,7 +131,7 @@ void printLabirinto(Labirinto* Labirinto) {
     for (int x = 0; x < LARGURA; x++) {
         printf("%s", Labirinto->Celulas[x][ALTURA-1].paredes[2] ? "--+" : "  +");
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 // Função que retorna uma posição aleatória das laterais, definindo o inicio e final do labirinto, dependendo do tipo.
@@ -144,13 +145,13 @@ int randomInicialFinal(int tipo) {
 }
 
 // Função teste para imprimir a matriz.
-void imprimeMatriz() {
+/*void imprimeMatriz() {
     for(int i=0;i<LINHAS;i++) {
         for(int j=0;j<COLUNAS;j++)
             printf("%d ", matrizLab[i][j]);
         printf("\n");
     }
-}
+}*/
 
 // Função que pede ao usuário altura e largura do labirinto que será gerado.
 void informaAltLarg() {
@@ -180,7 +181,7 @@ void informaAltLarg() {
 void aleatorizaCaminhos(Labirinto* lab) {
     Celula* viz;                            //Celula vizinha que sera randomizada.
     int aletLarg, aletAlt, vizRand;
-    int coef = (LARGURA * ALTURA) * 0.15;   //Determina a porcetagem de células que seráo escolhidas aleatóriamente para remover paredes aleatóriamente também.
+    int coef = (LARGURA * ALTURA) * FATORALEATORIO;   //Determina a porcetagem de células que seráo escolhidas aleatóriamente para remover paredes aleatóriamente também.
     int marcado[LARGURA][ALTURA];           //Matriz auxiliar, para evitar escolher células repetidas.
 
     for(int i=0; i<LARGURA; i++)
@@ -457,12 +458,6 @@ void opcBuscaCega(int matBusca[][COLUNAS]) {
             }
             printf("\n");
         }
-        for(int i=0; i<LINHAS; i++) {
-            for(int j=0; j<COLUNAS; j++) {
-                printf("%d ", matBusca[i][j]);
-            }
-            printf("\n");
-        }
     }
     printf("\n");
 }
@@ -489,8 +484,6 @@ bool menu() {
                     break;
                 case 2:
                     system("cls");
-                    //printf("posx - %d | posy - %d\n", jogador.posMatx, jogador.posMaty);
-                    imprimeMatriz();
                     printLabirinto(&lab);
                     break;
                 case 0:
@@ -498,7 +491,6 @@ bool menu() {
         }
     }while(1);
 }
-
 
 int main() {
     setlocale(LC_ALL, "");
