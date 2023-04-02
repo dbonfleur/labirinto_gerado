@@ -1,19 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <conio.h>
+#include <locale.h>
 #include <windows.h>
-
-int LARGURA, ALTURA, LARGMAT, ALTMAT;
+#include <stdbool.h>
 
 typedef struct Jogador {
-    int posx;
-    int posy;
-    int desx;
-    int desy;
+    int posMatx;
+    int posMaty;
+    int desenhox;
+    int desenhoy;
 } Jogador;
-
-Jogador jogador;
 
 typedef struct Celula {
     int x, y; // coordenadas da célula
@@ -21,19 +18,29 @@ typedef struct Celula {
     int paredes[4]; // lista de paredes (norte, leste, sul, oeste)
 } Celula;
 
-Celula* vizinhos[4];    //Celulas vizinhas que será utilizadas para selecionar recursivamente e aleatoriamente
-                        //os vizinhos que ainda não foram visitados, até todas as celulas serem escolhidas.
 typedef struct Labirinto {
     Celula **Celulas; // matriz de células que formam o desenho do labirinto
 } Labirinto;
 
+Jogador jogador;
+
+Labirinto lab;
+
+Celula* vizinhos[4];    //Celulas vizinhas que será utilizadas para selecionar recursivamente e aleatoriamente
+                        //os vizinhos que ainda não foram visitados, até todas as celulas serem escolhidas.
+
+int LARGURA, ALTURA, LINHAS, COLUNAS;
+
 int **matrizLab;      // matriz de inteiros, representando o labirinto desenhado numericamente
                       // (1) para paredes, (0) espaços vazios, (2) jogador.
 
+int deslcLinhas[4]  = {0, 1,  0, -1};
+int deslcColunas[4] = {1, 0, -1,  0};
+
 // Função que inicializa as células do labirinto
 void init_Celulas(Labirinto* Labirinto) {
-    for (int i = 0; i < LARGMAT; i++)
-        for(int j = 0; j < ALTMAT; j++)
+    for (int i = 0; i < LINHAS; i++)
+        for(int j = 0; j < COLUNAS; j++)
             matrizLab[i][j] = 1;                //Inicializa a matriz contendo tudo como parade
     for (int y = 0; y < ALTURA; y++) {
         for (int x = 0; x < LARGURA; x++) {
@@ -136,13 +143,13 @@ int randomInicialFinal(int tipo) {
 }
 
 // Função teste para imprimir a matriz.
-/*void imprimeMatriz() {
-    for(int i=0;i<LARGMAT;i++) {
-        for(int j=0;j<ALTMAT;j++)
+void imprimeMatriz() {
+    for(int i=0;i<LINHAS;i++) {
+        for(int j=0;j<COLUNAS;j++)
             printf("%d ", matrizLab[i][j]);
         printf("\n");
     }
-}*/
+}
 
 // Função que pede ao usuário altura e largura do labirinto que será gerado.
 void informaAltLarg() {
@@ -164,8 +171,8 @@ void informaAltLarg() {
     }while(LARGURA < 5);
     system("cls");
 
-    LARGMAT = ((ALTURA*2)+1);   //Como a célula de labirinto tem 1 casa com 4 paredes, a representação disso é 0 rodeado por 1 como parede, que serão removidas aleatóriamente.
-    ALTMAT = ((LARGURA*2)+1);
+    LINHAS = ((ALTURA*2)+2);   //Como a célula de labirinto tem 1 casa com 4 paredes, a representação disso é 0 rodeado por 1 como parede, que serão removidas aleatóriamente.
+    COLUNAS = ((LARGURA*2)+2);
 }
 
 // Função que escolhe algumas casa aleatóriamente, afim de ramificar ainda mais o labirinto e possibilitar vários caminhos que conseguem chegar ao final.
@@ -228,52 +235,55 @@ void aleatorizaCaminhos(Labirinto* lab) {
 
 //Função crucial para inicialização da construção  do labirinto gerado automáticamente.
 void iniciaLabirinto() {
+
     srand(time(NULL));
     informaAltLarg();
 
-    Labirinto lab;
     lab.Celulas = malloc(LARGURA * sizeof(Celula*));
     for(int i=0; i<LARGURA; i++)
         lab.Celulas[i] = malloc(ALTURA * sizeof(Celula));
 
-    matrizLab = malloc(LARGMAT * sizeof(int*));
-    for(int i=0; i<LARGMAT; i++)
-        matrizLab[i] = malloc(ALTMAT * sizeof(int));
+    matrizLab = malloc(LINHAS * sizeof(int*));
+    for(int i=0; i<LINHAS; i++)
+        matrizLab[i] = malloc(COLUNAS * sizeof(int));
 
     init_Celulas(&lab);
-    int ini = randomInicialFinal(1);
-    int end = randomInicialFinal(0);
+    int ini = randomInicialFinal(1);            //Para 1 é casa inicial.
+    int end = randomInicialFinal(0);            //Para 0 é casa final.
     lab.Celulas[ini][ALTURA-1].paredes[2] = 0;
     lab.Celulas[LARGURA-1][end].paredes[1] = 0;
 
-    jogador.posx = (ini*2)+1;
-    jogador.posy = ALTURA*2;
-    jogador.desx = (3*ini)+1;
-    jogador.desy =  ALTURA*2;
+    jogador.posMatx = (ini*2)+1;
+    jogador.posMaty = ALTURA*2;
+    jogador.desenhox = (3*ini)+1;
+    jogador.desenhoy =  ALTURA*2;
+
     matrizLab[(end*2)+1][LARGURA*2] = 0;
-    matrizLab[ALTURA*2][(ini*2)+1] = 2;
+    matrizLab[(end*2)+1][(LARGURA*2)+1] = 4;
+    matrizLab[ALTURA*2][(ini*2)+1] = 0;
+    matrizLab[(ALTURA*2)+1][(ini*2)+1] = 2;
 
     Celula* inicio = &lab.Celulas[ini][ALTURA-1]; // escolhe a célula inicial (canto superior esquerdo)
     gerarLabirinto(&lab, inicio);
     aleatorizaCaminhos(&lab);
-    printLabirinto(&lab);
+    //printLabirinto(&lab);
     //imprimeMatriz();
 
-    for(int i=0; i<LARGURA; i++)
+    /*for(int i=0; i<LARGURA; i++)
         free(lab.Celulas[i]);
-    free(lab.Celulas);
+    free(lab.Celulas);*/
 
     printf("\n");
 }
-
-int testVencer() {
-    if(jogador.posx >= (LARGURA*2)+1)
-        return 0;
-    return 1;
-}
-
+///Inicio das funções que terão a funcionalidade de realizar teste em si no labirinto.
 void gotoxy(int x, int y) {
      SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),(COORD){x,y});
+}
+
+int testVencer() {
+    if(jogador.posMatx >= (LARGURA*2)+1)
+        return 0;
+    return 1;
 }
 
 int jogo() {
@@ -281,83 +291,178 @@ int jogo() {
     char opc;
     do {
         if(flagDesenho) {
-            gotoxy(jogador.desx, jogador.desy);
+            gotoxy(jogador.desenhox, jogador.desenhoy);
             printf("##");
             flagDesenho = 0;
         }
         opc = getch();
         switch(opc) {
             case 'w':       //Acima
-                if(jogador.posy-2 >= 0) {
-                    if(matrizLab[jogador.posy-1][jogador.posx] == 0) {
-                        gotoxy(jogador.desx, jogador.desy);
+                if(jogador.posMaty-2 >= 0) {
+                    if(matrizLab[jogador.posMaty-1][jogador.posMatx] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
                         printf("/\\");
                         flagDesenho = 1;
                         if(flagMov) {
-                            matrizLab[jogador.posy][jogador.posx] = 0;
-                            jogador.posy--;
-                            matrizLab[jogador.posy][jogador.posx] = 2;
-                            jogador.desy--;
+                            matrizLab[jogador.posMaty][jogador.posMatx] = 0;
+                            jogador.posMaty--;
+                            matrizLab[jogador.posMaty][jogador.posMatx] = 2;
+                            jogador.desenhoy--;
                             flagMov = 0;
                         } else {
-                            matrizLab[jogador.posy][jogador.posx] = 0;
-                            jogador.posy-=2;
-                            matrizLab[jogador.posy][jogador.posx] = 2;
-                            jogador.desy-=2;
+                            matrizLab[jogador.posMaty][jogador.posMatx] = 0;
+                            jogador.posMaty-=2;
+                            matrizLab[jogador.posMaty][jogador.posMatx] = 2;
+                            jogador.desenhoy-=2;
                         }
                     }
                 }
                 break;
             case 'a':       //Esquerdo
-                if(jogador.posx-2 >= 0) {
-                    if(matrizLab[jogador.posy][jogador.posx-1] == 0) {
-                        gotoxy(jogador.desx, jogador.desy);
+                if(jogador.posMatx-2 >= 0) {
+                    if(matrizLab[jogador.posMaty][jogador.posMatx-1] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
                         printf("<-");
                         flagDesenho = 1;
-                        matrizLab[jogador.posy][jogador.posx] = 0;
-                        jogador.posx-=2;
-                        matrizLab[jogador.posy][jogador.posx] = 2;
-                        jogador.desx-=3;
+                        matrizLab[jogador.posMaty][jogador.posMatx] = 0;
+                        jogador.posMatx-=2;
+                        matrizLab[jogador.posMaty][jogador.posMatx] = 2;
+                        jogador.desenhox-=3;
                     }
                 }
                 break;
             case 's':       //Abaixo
-                if(jogador.posy+2 <= (ALTURA*2)) {
-                    if(matrizLab[jogador.posy+1][jogador.posx] == 0) {
-                        gotoxy(jogador.desx, jogador.desy);
+                if(jogador.posMaty+2 <= (ALTURA*2)) {
+                    if(matrizLab[jogador.posMaty+1][jogador.posMatx] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
                         printf("\\/");
                         flagDesenho = 1;
-                        matrizLab[jogador.posy][jogador.posx] = 0;
-                        jogador.posy+=2;
-                        matrizLab[jogador.posy][jogador.posx] = 2;
-                        jogador.desy+=2;
+                        matrizLab[jogador.posMaty][jogador.posMatx] = 0;
+                        jogador.posMaty+=2;
+                        matrizLab[jogador.posMaty][jogador.posMatx] = 2;
+                        jogador.desenhoy+=2;
                     }
                 }
                 break;
             case 'd':       //Direita
-                if(jogador.posx+2 <= (LARGURA*2)+1) {
-                    if(matrizLab[jogador.posy][jogador.posx+1] == 0) {
-                        gotoxy(jogador.desx, jogador.desy);
+                if(jogador.posMatx+2 <= (LARGURA*2)+1) {
+                    if(matrizLab[jogador.posMaty][jogador.posMatx+1] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
                         printf("->");
                         flagDesenho = 1;
-                        matrizLab[jogador.posy][jogador.posx] = 0;
-                        jogador.posx+=2;
-                        matrizLab[jogador.posy][jogador.posx] = 2;
-                        jogador.desx+=3;
+                        matrizLab[jogador.posMaty][jogador.posMatx] = 0;
+                        jogador.posMatx+=2;
+                        matrizLab[jogador.posMaty][jogador.posMatx] = 2;
+                        jogador.desenhox+=3;
                     }
                 }
         }
     }while(testVencer());
+
     gotoxy(0, ALTURA*2+3);
 
-    for(int i=0; i<LARGMAT; i++)
+    for(int i=0; i<LINHAS; i++)
         free(matrizLab[i]);
     free(matrizLab);
 
     return 1;
 }
 
+bool validacaoProfunda(int labVal[][COLUNAS], int linha, int coluna) {
+
+    if(linha < 0 || linha >= LINHAS || coluna < 0 || coluna >= COLUNAS || labVal[linha][coluna] == 1 || labVal[linha][coluna] == 3)
+        return false;
+
+    return true;
+}
+
+bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna) {
+
+    //Caso ele esteja na casa aonde contem 4 (representando o final), termina a busca e retorna como possível finalizar o labirinto
+    if(matBusca[linha][coluna] == 4)
+        return true;
+
+    //Valida a casa aonde ele está operando, se for validada como espaço vazio dentro da matriz e não visitada, marca como vistada representado pelo 3.
+    if(validacaoProfunda(matBusca, linha, coluna))
+        matBusca[linha][coluna] = 3;
+
+    // Exploramos as quatro direções possíveis a partir da posição atual
+    for (int i = 0; i < 4; i++) {
+        int proxLinha = linha + deslcLinhas[i];
+        int proxColuna = coluna + deslcColunas[i];
+
+        // Se a próxima posição é válida, fazemos a chamada recursiva
+        if (validacaoProfunda(matBusca, proxLinha, proxColuna)) {
+            if (buscaProfunda(matBusca, proxLinha, proxColuna)) {
+                return true;
+            }
+        }
+    }
+
+    // Se nenhuma das direções levou à saída, marcamos a posição como vazia novamente e retornamos falso
+    matBusca[linha][coluna] = 0;
+    return false;
+}
+
+bool menu() {
+    int opc, matBusca[LINHAS][COLUNAS];
+
+    do {
+        do{
+            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Imprimir Labirinto.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
+            scanf("%d", &opc);
+            if(opc < 0 || opc > 2) {
+                system("cls");
+                printf("Opção inválida!\n\n");
+            }
+        }while(opc < 0 || opc > 2);
+        if(opc != 0)
+            for(int i=0; i<LINHAS; i++)
+                for(int j=0; j<COLUNAS; j++)
+                    matBusca[i][j] = matrizLab[i][j];
+        switch(opc) {
+                case 1:
+                    system("cls");
+                    if(buscaProfunda(matBusca, jogador.posMaty, jogador.posMatx)) {
+                        for(int i=0; i<LINHAS; i++) {
+                            for(int j=0; j<COLUNAS; j++) {
+                                switch(matBusca[i][j]) {
+                                        case 0:
+                                            printf("  ");
+                                            break;
+                                        case 1:
+                                            printf("##");
+                                            break;
+                                        case 3:
+                                            printf("[]");
+                                            break;
+                                        case 4:
+                                            printf("FF");
+                                }
+                                //printf("%d ", matBusca[i][j]);
+                            }
+                            printf("\n");
+                        }
+
+                    }
+                    break;
+                case 2:
+                    system("cls");
+                    //printf("posx - %d | posy - %d\n", jogador.posMatx, jogador.posMaty);
+                    imprimeMatriz();
+                    printLabirinto(&lab);
+                    break;
+                case 0:
+                    return true;
+        }
+    }while(1);
+}
+
+
 int main() {
+    setlocale(LC_ALL, "");
     iniciaLabirinto();
-    return jogo();
+
+    return menu();
+    //return jogo();
 }

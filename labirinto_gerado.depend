@@ -6,10 +6,11 @@
 	<conio.h>
 	<windows.h>
 
-1680132428 source:d:\github\labirinto_gerado\main.c
+1680443058 source:d:\github\labirinto_gerado\main.c
 	<stdio.h>
 	<stdlib.h>
 	<time.h>
-	<conio.h>
+	<locale.h>
 	<windows.h>
+	<stdbool.h>
 
