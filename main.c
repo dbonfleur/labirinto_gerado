@@ -235,6 +235,17 @@ void aleatorizaCaminhos(Labirinto* lab) {
 
 }
 
+void liberaPonteiros() {
+    int i;
+    for(i=0; i<LARGURA; i++)
+        free(lab.Celulas[i]);
+    free(lab.Celulas);
+
+    for(i=0; i<LARGURA; i++)
+        free(matrizLab[i]);
+    free(matrizLab);
+}
+
 //Função crucial para inicialização da construção  do labirinto gerado automáticamente.
 void iniciaLabirinto() {
 
@@ -268,24 +279,8 @@ void iniciaLabirinto() {
     Celula* inicio = &lab.Celulas[ini][ALTURA-1]; // escolhe a célula inicial (canto superior esquerdo)
     gerarLabirinto(&lab, inicio);
     aleatorizaCaminhos(&lab);
-    //printLabirinto(&lab);
-    //imprimeMatriz();
-
-    /*for(int i=0; i<LARGURA; i++)
-        free(lab.Celulas[i]);
-    free(lab.Celulas);*/
 
     printf("\n");
-}
-///Inicio das funções que terão a funcionalidade de realizar teste em si no labirinto.
-void gotoxy(int x, int y) {
-     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),(COORD){x,y});
-}
-
-int testVencer() {
-    if(jogador.posMatx >= (LARGURA*2)+1)
-        return 0;
-    return 1;
 }
 
 bool validacaoProfunda(int labVal[][COLUNAS], int linha, int coluna) {
@@ -384,13 +379,13 @@ bool menu() {
 
     do {
         do{
-            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Imprimir Labirinto.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
+            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Imprimir Labirinto.\n\t(3)Imprimir Matriz.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
             scanf("%d", &opc);
-            if(opc < 0 || opc > 2) {
+            if(opc < 0 || opc > 3) {
                 system("cls");
                 printf("Opção inválida!\n\n");
             }
-        }while(opc < 0 || opc > 2);
+        }while(opc < 0 || opc > 3);
         if(opc != 0)
             for(int i=0; i<LINHAS; i++)
                 for(int j=0; j<COLUNAS; j++)
@@ -402,9 +397,13 @@ bool menu() {
                 case 2:
                     system("cls");
                     printLabirinto(&lab);
+                    break;
+                case 3:
+                    system("cls");
                     imprimeMatriz();
                     break;
                 case 0:
+                    liberaPonteiros() ;
                     return true;
         }
     }while(1);

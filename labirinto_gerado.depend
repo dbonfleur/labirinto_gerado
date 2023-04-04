@@ -14,3 +14,11 @@
 	<windows.h>
 	<stdbool.h>
 
+1680633596 source:c:\github\labirinto_gerado\main.c
+	<stdio.h>
+	<stdlib.h>
+	<time.h>
+	<locale.h>
+	<windows.h>
+	<stdbool.h>
+
