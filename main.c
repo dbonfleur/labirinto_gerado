@@ -4,7 +4,7 @@
 #include <locale.h>
 #include <windows.h>
 #include <stdbool.h>
-#define FATORALEATORIO 0.1
+#define FATORALEATORIO 0.2
 
 typedef struct Jogador {
     int posMatx;
@@ -145,13 +145,13 @@ int randomInicialFinal(int tipo) {
 }
 
 // Função teste para imprimir a matriz.
-/*void imprimeMatriz() {
+void imprimeMatriz() {
     for(int i=0;i<LINHAS;i++) {
         for(int j=0;j<COLUNAS;j++)
             printf("%d ", matrizLab[i][j]);
         printf("\n");
     }
-}*/
+}
 
 // Função que pede ao usuário altura e largura do labirinto que será gerado.
 void informaAltLarg() {
@@ -288,93 +288,9 @@ int testVencer() {
     return 1;
 }
 
-int jogo() {
-    int flagMov = 1, flagDesenho = 1;
-    char opc;
-    do {
-        if(flagDesenho) {
-            gotoxy(jogador.desenhox, jogador.desenhoy);
-            printf("##");
-            flagDesenho = 0;
-        }
-        opc = getch();
-        switch(opc) {
-            case 'w':       //Acima
-                if(jogador.posMaty-2 >= 0) {
-                    if(matrizLab[jogador.posMaty-1][jogador.posMatx] == 0) {
-                        gotoxy(jogador.desenhox, jogador.desenhoy);
-                        printf("/\\");
-                        flagDesenho = 1;
-                        if(flagMov) {
-                            matrizLab[jogador.posMaty][jogador.posMatx] = 0;
-                            jogador.posMaty--;
-                            matrizLab[jogador.posMaty][jogador.posMatx] = 2;
-                            jogador.desenhoy--;
-                            flagMov = 0;
-                        } else {
-                            matrizLab[jogador.posMaty][jogador.posMatx] = 0;
-                            jogador.posMaty-=2;
-                            matrizLab[jogador.posMaty][jogador.posMatx] = 2;
-                            jogador.desenhoy-=2;
-                        }
-                    }
-                }
-                break;
-            case 'a':       //Esquerdo
-                if(jogador.posMatx-2 >= 0) {
-                    if(matrizLab[jogador.posMaty][jogador.posMatx-1] == 0) {
-                        gotoxy(jogador.desenhox, jogador.desenhoy);
-                        printf("<-");
-                        flagDesenho = 1;
-                        matrizLab[jogador.posMaty][jogador.posMatx] = 0;
-                        jogador.posMatx-=2;
-                        matrizLab[jogador.posMaty][jogador.posMatx] = 2;
-                        jogador.desenhox-=3;
-                    }
-                }
-                break;
-            case 's':       //Abaixo
-                if(jogador.posMaty+2 <= (ALTURA*2)) {
-                    if(matrizLab[jogador.posMaty+1][jogador.posMatx] == 0) {
-                        gotoxy(jogador.desenhox, jogador.desenhoy);
-                        printf("\\/");
-                        flagDesenho = 1;
-                        matrizLab[jogador.posMaty][jogador.posMatx] = 0;
-                        jogador.posMaty+=2;
-                        matrizLab[jogador.posMaty][jogador.posMatx] = 2;
-                        jogador.desenhoy+=2;
-                    }
-                }
-                break;
-            case 'd':       //Direita
-                if(jogador.posMatx+2 <= (LARGURA*2)+1) {
-                    if(matrizLab[jogador.posMaty][jogador.posMatx+1] == 0) {
-                        gotoxy(jogador.desenhox, jogador.desenhoy);
-                        printf("->");
-                        flagDesenho = 1;
-                        matrizLab[jogador.posMaty][jogador.posMatx] = 0;
-                        jogador.posMatx+=2;
-                        matrizLab[jogador.posMaty][jogador.posMatx] = 2;
-                        jogador.desenhox+=3;
-                    }
-                }
-        }
-    }while(testVencer());
-
-    gotoxy(0, ALTURA*2+3);
-
-    for(int i=0; i<LINHAS; i++)
-        free(matrizLab[i]);
-    free(matrizLab);
-
-    return 1;
-}
-
 bool validacaoProfunda(int labVal[][COLUNAS], int linha, int coluna) {
-
     if(linha < 0 || linha >= LINHAS || coluna < 0 || coluna >= COLUNAS || labVal[linha][coluna] == 1 || labVal[linha][coluna] >= 4)
         return false;
-
     return true;
 }
 
@@ -402,8 +318,8 @@ bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
         }
     }
 
-    // Se nenhuma das direções levou à saída, marcamos a posição como vazia novamente e retornamos falso
-    matBusca[linha][coluna] = 0;
+    // Se nenhuma das direções levou à saída, marcamos a posição como visitada como num 8 e retornamos falso
+    matBusca[linha][coluna] = 8;
     return false;
 }
 
@@ -413,6 +329,7 @@ void opcBuscaCega(int matBusca[][COLUNAS]) {
         for(int i=0; i<LINHAS; i++) {
             for(int j=0; j<COLUNAS; j++) {
                 switch(matBusca[i][j]) {
+                        case 8:
                         case 0:
                             if(j%2 == 0)
                                 printf(" ");
@@ -485,6 +402,7 @@ bool menu() {
                 case 2:
                     system("cls");
                     printLabirinto(&lab);
+                    imprimeMatriz();
                     break;
                 case 0:
                     return true;
