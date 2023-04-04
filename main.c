@@ -7,10 +7,10 @@
 #define FATORALEATORIO 0.2
 
 typedef struct Jogador {
-    int posMatx;
-    int posMaty;
-    int desenhox;
-    int desenhoy;
+    int posInix;
+    int posIniy;
+    int posFimx;
+    int posFimy;
 } Jogador;
 
 typedef struct Celula {
@@ -22,6 +22,12 @@ typedef struct Celula {
 typedef struct Labirinto {
     Celula **Celulas; // matriz de células que formam o desenho do labirinto
 } Labirinto;
+
+typedef struct {
+    int linha;
+    int coluna;
+    int f_score;
+} node;
 
 Jogador jogador;
 
@@ -107,6 +113,7 @@ void gerarLabirinto(Labirinto* Labirinto, Celula* atual) {
 
 // Função que imprime o labirinto na tela
 void printLabirinto(Labirinto* Labirinto) {
+    system("cls");
     // imprime a primeira linha de paredes norte
     printf("+");
     for (int x = 0; x < LARGURA; x++)
@@ -146,6 +153,7 @@ int randomInicialFinal(int tipo) {
 
 // Função teste para imprimir a matriz.
 void imprimeMatriz() {
+    system("cls");
     for(int i=0;i<LINHAS;i++) {
         for(int j=0;j<COLUNAS;j++)
             printf("%d ", matrizLab[i][j]);
@@ -266,10 +274,10 @@ void iniciaLabirinto() {
     lab.Celulas[ini][ALTURA-1].paredes[2] = 0;
     lab.Celulas[LARGURA-1][end].paredes[1] = 0;
 
-    jogador.posMatx = (ini*2)+1;
-    jogador.posMaty = ALTURA*2;
-    jogador.desenhox = (3*ini)+1;
-    jogador.desenhoy =  ALTURA*2;
+    jogador.posInix = (ini*2)+1;
+    jogador.posIniy = (ALTURA*2)+1;
+    jogador.posFimx = (LARGURA*2)+1;
+    jogador.posFimy = (end*2)+1;
 
     matrizLab[(end*2)+1][LARGURA*2] = 0;
     matrizLab[(end*2)+1][(LARGURA*2)+1] = 3;
@@ -281,6 +289,58 @@ void iniciaLabirinto() {
     aleatorizaCaminhos(&lab);
 
     printf("\n");
+}
+
+void imprimeMatrizResolvida(int matResolvida[][COLUNAS]) {
+    for(int i=0; i<LINHAS; i++) {
+        for(int j=0; j<COLUNAS; j++) {
+            switch(matResolvida[i][j]) {
+                    case 8:
+                    case 0:
+                        if(j%2 == 0)
+                            printf(" ");
+                        else
+                            printf("  ");
+                        break;
+                    case 1:
+                        if(i%2 == 0) {
+                            if(j%2 == 0)
+                                printf("+");
+                            else
+                                printf("--");
+                        } else
+                            if(j%2 == 0)
+                                printf("|");
+                            else
+                                printf("++");
+                        break;
+                    case 2:
+                        printf("SS");
+                        break;
+                    case 3:
+                        printf("FF");
+                        break;
+                    case 4:     //Norte
+                        printf("/\\");
+                        break;
+                    case 5:     //Leste
+                        if(j%2 == 0)
+                            printf(">");
+                        else
+                            printf(">>");
+                        break;
+                    case 6:     //Sul
+                        printf("\\/");
+                        break;
+                    case 7:     //Oeste
+                        if(j%2 == 0)
+                            printf("<");
+                        else
+                            printf("<<");
+            }
+        }
+        printf("\n");
+    }
 }
 
 bool validacaoProfunda(int labVal[][COLUNAS], int linha, int coluna) {
@@ -320,58 +380,138 @@ bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
 
 void opcBuscaCega(int matBusca[][COLUNAS]) {
     system("cls");
-    if(buscaProfunda(matBusca, jogador.posMaty, jogador.posMatx, dirMatriz[0])) {
-        for(int i=0; i<LINHAS; i++) {
-            for(int j=0; j<COLUNAS; j++) {
-                switch(matBusca[i][j]) {
-                        case 8:
-                        case 0:
-                            if(j%2 == 0)
-                                printf(" ");
-                            else
-                                printf("  ");
-                            break;
-                        case 1:
-                            if(i%2 == 0) {
-                                if(j%2 == 0)
-                                    printf("+");
-                                else
-                                    printf("--");
-                            } else
-                                if(j%2 == 0)
-                                    printf("|");
-                                else
-                                    printf("++");
-                            break;
-                        case 2:
-                            printf("SS");
-                            break;
-                        case 3:
-                            printf("FF");
-                            break;
-                        case 4:     //Norte
-                            printf("/\\");
-                            break;
-                        case 5:     //Leste
-                            if(j%2 == 0)
-                                printf(">");
-                            else
-                                printf(">>");
-                            break;
-                        case 6:     //Sul
-                            printf("\\/");
-                            break;
-                        case 7:     //Oeste
-                            if(j%2 == 0)
-                                printf("<");
-                            else
-                                printf("<<");
-                }
+    if(buscaProfunda(matBusca, jogador.posIniy, jogador.posInix, dirMatriz[0]))
+        imprimeMatrizResolvida(matBusca);
+    printf("\n");
+}
+
+int heuristic(int r1, int c1, int r2, int c2) {
+    // Distância Manhattan
+    return abs(r1 - r2) + abs(c1 - c2);
+}
+
+bool astar(int ini_linha, int ini_coluna, int fim_linha, int fim_coluna, int matBusca[][COLUNAS]) {
+    int coef = LINHAS * COLUNAS;
+
+    node *listaAberta;
+    listaAberta = malloc(coef * (sizeof(node)));
+
+    node *listaFechada;
+    listaFechada = malloc(coef * (sizeof(node)));
+
+    int listaFechadaTam = 0;
+    int listaAbertaTam = 1;
+    int guardaOrigem[LINHAS][COLUNAS];
+    int guardaPosi[LINHAS][COLUNAS];
+
+    listaAberta[0].linha = ini_linha;
+    listaAberta[0].coluna = ini_coluna;
+    listaAberta[0].f_score = heuristic(ini_linha, ini_coluna, fim_linha, fim_coluna);
+
+    while (listaAbertaTam > 0) {
+        // Encontra o nó com o menor f_score
+        int atual_index = 0;
+        for (int i = 0; i < listaAbertaTam; i++) {
+            if (listaAberta[i].f_score < listaAberta[atual_index].f_score) {
+                atual_index = i;
             }
-            printf("\n");
+        }
+
+        node atual_node = listaAberta[atual_index];
+
+        if (atual_node.linha == fim_linha && atual_node.coluna == fim_coluna) {
+            // Chegou ao destino
+            int atual_linha = atual_node.linha;
+            int atual_coluna = fim_coluna;
+            while (atual_linha != ini_linha || atual_coluna != ini_coluna) {
+                int prox_linha = guardaOrigem[atual_linha][atual_coluna] / COLUNAS;
+                int prox_coluna = guardaOrigem[atual_linha][atual_coluna] % COLUNAS;
+                matBusca[atual_linha][atual_coluna] = guardaPosi[atual_linha][atual_coluna]; // Marca o caminho encontrado
+                atual_linha = prox_linha;
+                atual_coluna = prox_coluna;
+            }
+            matBusca[ini_linha][ini_coluna] = guardaPosi[atual_linha][atual_coluna];
+            free(listaAberta);
+            free(listaFechada);
+            return true; // Caminho encontrado
+        }
+
+        // Remove o nó da lista aberta
+        for (int i = atual_index; i < listaAbertaTam - 1; i++) {
+            listaAberta[i] = listaAberta[i+1];
+        }
+        listaAbertaTam--;
+
+        // Adiciona o nó à lista fechada
+        listaFechada[listaFechadaTam] = atual_node;
+        listaFechadaTam++;
+
+        // Encontra os nós adjacentes
+        int vizinhos[4][2] = {{-1,0}, {0,1}, {1,0}, {0,-1}};
+        for (int i = 0; i < 4; i++) {
+            int viz_linha = atual_node.linha + vizinhos[i][0];
+            int viz_coluna = atual_node.coluna + vizinhos[i][1];
+
+            // Verifica se a célula é válida e livre
+            if (viz_linha >= 0 && viz_linha < LINHAS && viz_coluna >= 0 && viz_coluna < COLUNAS && matBusca[viz_linha][viz_coluna] == 0) {
+
+                // Verifica se o nó já está na lista fechada
+                int veriListaFechada = 0;
+                for (int j = 0; j < listaFechadaTam; j++) {
+                    if (listaFechada[j].linha == viz_linha && listaFechada[j].coluna == viz_coluna) {
+                        veriListaFechada = 1;
+                        break;
+                    }
+                }
+                if (veriListaFechada) {
+                    continue;
+                }
+
+                // Calcula o novo f_score do nó
+                int g_score = atual_node.f_score - heuristic(atual_node.linha, atual_node.coluna, fim_linha, fim_coluna);
+                g_score += 1; // Custo do movimento
+                int h_score = heuristic(viz_linha, viz_coluna, fim_linha, fim_coluna);
+                int f_score = g_score + h_score;
+
+                // Verifica se o nó já está na lista aberta
+                int flagListaAberta = 0;
+                for (int j = 0; j < listaAbertaTam; j++) {
+                    if (listaAberta[j].linha == viz_linha && listaAberta[j].coluna == viz_coluna) {
+                        flagListaAberta = 1;
+                        if (f_score < listaAberta[j].f_score) {
+                            // Atualiza o nó na lista aberta com o novo f_score
+                            listaAberta[j].f_score = f_score;
+                            guardaOrigem[viz_linha][viz_coluna] = atual_node.linha * COLUNAS + atual_node.coluna;
+                            guardaPosi[viz_linha][viz_coluna] = i + 4;
+                        }
+                        break;
+                    }
+                }
+                if (flagListaAberta) {
+                    continue;
+                }
+
+                // Adiciona o nó à lista aberta
+                node viz_node = {viz_linha, viz_coluna, f_score};
+                listaAberta[listaAbertaTam] = viz_node;
+                listaAbertaTam++;
+                guardaOrigem[viz_linha][viz_coluna] = atual_node.linha * COLUNAS + atual_node.coluna;
+                guardaPosi[viz_linha][viz_coluna] = i + 4;
+            }
         }
     }
-    printf("\n");
+    free(listaAberta);
+    free(listaFechada);
+    return false; // Caminho não encontrado
+}
+
+void opcBuscaHeuristica1(int matBusca[][COLUNAS]) {
+    system("cls");
+    printf("\n\tAguarde...\n\n");
+    matBusca[jogador.posFimy][jogador.posFimx] = 0;
+    if(astar(jogador.posIniy, jogador.posInix, jogador.posFimy, jogador.posFimx, matBusca)) {
+        imprimeMatrizResolvida(matBusca);
+    }
 }
 
 bool menu() {
@@ -379,13 +519,13 @@ bool menu() {
 
     do {
         do{
-            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Imprimir Labirinto.\n\t(3)Imprimir Matriz.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
+            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Realizar Busca Heurística. (*A)\n\t(3)Imprimir Labirinto.\n\t(4)Imprimir Matriz.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
             scanf("%d", &opc);
-            if(opc < 0 || opc > 3) {
+            if(opc < 0 || opc > 4) {
                 system("cls");
                 printf("Opção inválida!\n\n");
             }
-        }while(opc < 0 || opc > 3);
+        }while(opc < 0 || opc > 4);
         if(opc != 0)
             for(int i=0; i<LINHAS; i++)
                 for(int j=0; j<COLUNAS; j++)
@@ -395,11 +535,12 @@ bool menu() {
                     opcBuscaCega(matBusca);
                     break;
                 case 2:
-                    system("cls");
-                    printLabirinto(&lab);
+                    opcBuscaHeuristica1(matBusca);
                     break;
                 case 3:
-                    system("cls");
+                    printLabirinto(&lab);
+                    break;
+                case 4:
                     imprimeMatriz();
                     break;
                 case 0:
