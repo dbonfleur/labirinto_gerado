@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <locale.h>
+#include <string.h>
 #include <windows.h>
 #include <stdbool.h>
 #define FATORALEATORIO 0.2
@@ -11,6 +12,7 @@ typedef struct Jogador {
     int posIniy;
     int posFimx;
     int posFimy;
+    int movimentos;
 } Jogador;
 
 typedef struct Celula {
@@ -41,9 +43,13 @@ int LARGURA, ALTURA, LINHAS, COLUNAS;
 int **matrizLab;      // matriz de inteiros, representando o labirinto desenhado numericamente
                       // (1) para paredes, (0) espaços vazios, (2) jogador.
 
-int deslcLinhas[4]  = {-1, 0, 1,  0};//(norte, leste, sul, oeste)
-int deslcColunas[4] = { 0, 1, 0, -1};//(norte, leste, sul, oeste)
-int dirMatriz[4] =    {4, 5, 6, 7}; //(norte, leste, sul, oeste)
+int deslcLinhas[4]  =   {-1, 0, 1,  0};                 //(norte, leste, sul, oeste)
+int deslcColunas[4] =   { 0, 1, 0, -1};                 //(norte, leste, sul, oeste)
+int dirMatriz[4] =      {4, 5, 6, 7};                   //(norte, leste, sul, oeste)
+int randDirecoes[10] =  {0, 0, 0, 1, 1, 1, 1, 1, 2, 3}; //(30% norte, 50% leste, 10% sul, 10% oeste)
+
+char nomeArq[30];
+FILE *arq;
 
 // Função que inicializa as células do labirinto
 void init_Celulas(Labirinto* Labirinto) {
@@ -161,7 +167,7 @@ void imprimeMatriz() {
     }
 }
 
-// Função que pede ao usuário altura e largura do labirinto que será gerado.
+// Função que pede ao usuário altura e largura do labirinto que será gerado, além do nome do arquivo que será salvo os testes.
 void informaAltLarg() {
     do {
         printf("Informe a Altura do labirinto (minimo 5) -> ");
@@ -185,6 +191,13 @@ void informaAltLarg() {
     COLUNAS = ((LARGURA*2)+2);
 }
 
+void criaArquivo()  {
+    printf("Informe o nome do arquivo para salvar o caminho realizado no labirinto -> ");
+    scanf("%s", &nomeArq);
+    strcat(nomeArq, ".txt");
+    arq = fopen(nomeArq, "a+");
+    system("cls");
+}
 // Função que escolhe algumas casa aleatóriamente, afim de ramificar ainda mais o labirinto e possibilitar vários caminhos que conseguem chegar ao final.
 void aleatorizaCaminhos(Labirinto* lab) {
     Celula* viz;                            //Celula vizinha que sera randomizada.
@@ -243,6 +256,7 @@ void aleatorizaCaminhos(Labirinto* lab) {
 
 }
 
+//Função para liberar ponteiros, ao terminar de executar código
 void liberaPonteiros() {
     int i;
     for(i=0; i<LARGURA; i++)
@@ -259,6 +273,7 @@ void iniciaLabirinto() {
 
     srand(time(NULL));
     informaAltLarg();
+    criaArquivo();
 
     lab.Celulas = malloc(LARGURA * sizeof(Celula*));
     for(int i=0; i<LARGURA; i++)
@@ -297,48 +312,73 @@ void imprimeMatrizResolvida(int matResolvida[][COLUNAS]) {
             switch(matResolvida[i][j]) {
                     case 8:
                     case 0:
-                        if(j%2 == 0)
+                        if(j%2 == 0) {
+                            fprintf(arq, " ");
                             printf(" ");
-                        else
+                        } else {
+                            fprintf(arq, "  ");
                             printf("  ");
+                        }
                         break;
                     case 1:
                         if(i%2 == 0) {
-                            if(j%2 == 0)
+                            if(j%2 == 0) {
+                                fprintf(arq, "+");
                                 printf("+");
-                            else
+                            } else {
+                                fprintf(arq, "--");
                                 printf("--");
+                            }
                         } else
-                            if(j%2 == 0)
+                            if(j%2 == 0) {
+                                fprintf(arq, "|");
                                 printf("|");
-                            else
+                            } else {
+                                fprintf(arq, "++");
                                 printf("++");
+                            }
                         break;
                     case 2:
+                        fprintf(arq, "SS");
                         printf("SS");
                         break;
                     case 3:
+                        jogador.movimentos++;
+                        fprintf(arq, "FF");
                         printf("FF");
                         break;
                     case 4:     //Norte
+                        jogador.movimentos++;
+                        fprintf(arq, "/\\");
                         printf("/\\");
                         break;
                     case 5:     //Leste
-                        if(j%2 == 0)
+                        jogador.movimentos++;
+                        if(j%2 == 0) {
+                            fprintf(arq, ">");
                             printf(">");
-                        else
+                        } else {
+                            fprintf(arq, ">>");
                             printf(">>");
+                        }
                         break;
                     case 6:     //Sul
+                        jogador.movimentos++;
+                        fprintf(arq, "\\/");
                         printf("\\/");
                         break;
                     case 7:     //Oeste
-                        if(j%2 == 0)
+                        jogador.movimentos++;
+                        if(j%2 == 0) {
+                            fprintf(arq, "<");
                             printf("<");
-                        else
+                        } else {
+                            fprintf(arq, "<<");
                             printf("<<");
+                        }
             }
         }
+        fprintf(arq, "\n");
         printf("\n");
     }
 }
@@ -350,7 +390,6 @@ bool validacaoProfunda(int labVal[][COLUNAS], int linha, int coluna) {
 }
 
 bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
-
     //Caso ele esteja na casa aonde contem 3 (representando o final), termina a busca e retorna como possível finalizar o labirinto
     if(matBusca[linha][coluna] == 3)
         return true;
@@ -361,6 +400,7 @@ bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
 
     // Exploramos as quatro direções possíveis a partir da posição atual
     for (int i = 0; i < 4; i++) {
+
         int proxLinha = linha + deslcLinhas[i];
         int proxColuna = coluna + deslcColunas[i];
         int direcao = dirMatriz[i];
@@ -380,9 +420,12 @@ bool buscaProfunda(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
 
 void opcBuscaCega(int matBusca[][COLUNAS]) {
     system("cls");
-    if(buscaProfunda(matBusca, jogador.posIniy, jogador.posInix, dirMatriz[0]))
+    fprintf(arq, "Labirinto %dx%d Busca Profunda:\n\n", ALTURA, LARGURA);
+    if(buscaProfunda(matBusca, jogador.posIniy, jogador.posInix, dirMatriz[0])) {
         imprimeMatrizResolvida(matBusca);
-    printf("\n");
+        printf("\n\nLabirinto %dx%d resolvido utilizando a busca por profundidade ao custo de %d movimentos!\n\n", ALTURA, LARGURA, jogador.movimentos);
+        fprintf(arq, "\n\nLabirinto %dx%d resolvido utilizando a busca por profundidade ao custo de %d movimentos!\n\n", ALTURA, LARGURA, jogador.movimentos);
+    }
 }
 
 int heuristic(int r1, int c1, int r2, int c2) {
@@ -505,27 +548,77 @@ bool astar(int ini_linha, int ini_coluna, int fim_linha, int fim_coluna, int mat
     return false; // Caminho não encontrado
 }
 
-void opcBuscaHeuristica1(int matBusca[][COLUNAS]) {
+void opcBuscaHeuristica(int matBusca[][COLUNAS]) {
     system("cls");
     printf("\n\tAguarde...\n\n");
+    fprintf(arq, "Labirinto %dx%d Busca Astar:\n\n", ALTURA, LARGURA);
     matBusca[jogador.posFimy][jogador.posFimx] = 0;
     if(astar(jogador.posIniy, jogador.posInix, jogador.posFimy, jogador.posFimx, matBusca)) {
         imprimeMatrizResolvida(matBusca);
+        printf("\n\nLabirinto %dx%d resolvido utilizando a heurísitca astar (*A) ao custo de %d movimentos!\n\n", ALTURA, LARGURA, jogador.movimentos);
+        fprintf(arq, "\n\nLabirinto %dx%d resolvido utilizando a heurísitca astar (*A) ao custo de %d movimentos!\n\n", ALTURA, LARGURA, jogador.movimentos);
+    }
+}
+
+bool buscaProfundaAleatoriaGuiada(int matBusca[][COLUNAS], int linha, int coluna, int dir) {
+    //Caso ele esteja na casa aonde contem 3 (representando o final), termina a busca e retorna como possível finalizar o labirinto
+    if(matBusca[linha][coluna] == 3)
+        return true;
+
+    //Valida a casa aonde ele está operando, se for validada como espaço vazio dentro da matriz e não visitada, marca como vistada representado pela variavel dir, aonde será a direção para onde foi sendo (.
+    if(validacaoProfunda(matBusca, linha, coluna))
+        matBusca[linha][coluna] = dir;
+
+    int randEscolha;
+    int listaJaExplorado[4] = {0, 0, 0, 0};
+
+    // Exploramos as quatro direções possíveis a partir da posição atual
+    for (int i = 0; i < 4; i++) {               //(norte, leste, sul, oeste)
+        do {
+            randEscolha = rand() % 10;
+        }while(listaJaExplorado[randDirecoes[randEscolha]]);
+
+        listaJaExplorado[randDirecoes[randEscolha]] = 1;
+
+        int proxLinha = linha + deslcLinhas[randDirecoes[randEscolha]];
+        int proxColuna = coluna + deslcColunas[randDirecoes[randEscolha]];
+        int direcao = dirMatriz[randDirecoes[randEscolha]];
+
+        // Se a próxima posição é válida, fazemos a chamada recursiva
+        if (validacaoProfunda(matBusca, proxLinha, proxColuna)) {
+            if (buscaProfundaAleatoriaGuiada(matBusca, proxLinha, proxColuna, direcao)) {
+                return true;
+            }
+        }
+    }
+
+    // Se nenhuma das direções levou à saída, marcamos a posição como visitada como num 8 e retornamos falso
+    matBusca[linha][coluna] = 8;
+    return false;
+}
+
+void opcBuscaPensada(int matBusca[][COLUNAS]) {
+    system("cls");
+    fprintf(arq, "Labirinto %dx%d Busca Profunda Aleatória Guiada:\n\n", ALTURA, LARGURA);
+    if(buscaProfundaAleatoriaGuiada(matBusca, jogador.posIniy, jogador.posInix, dirMatriz[0])) {
+        imprimeMatrizResolvida(matBusca);
+        printf("\n\nLabirinto %dx%d resolvido utilizando a busca profunda aleatória guiada ao custo de %d movimentos!\n\n", ALTURA, LARGURA, jogador.movimentos);
+        fprintf(arq, "\n\nLabirinto %dx%d resolvido utilizando a busca profunda aleatória guiada ao custo de %d movimentos!\n\n", ALTURA, LARGURA, jogador.movimentos);
     }
 }
 
 bool menu() {
     int opc, matBusca[LINHAS][COLUNAS];
-
     do {
         do{
-            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Realizar Busca Heurística. (*A)\n\t(3)Imprimir Labirinto.\n\t(4)Imprimir Matriz.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
+            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Realizar Busca Heurística. (*A)\n\t(3)Realizar Busca Pensada (Profunda Aleatória Guiada)\n\t(4)Imprimir Labirinto.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
             scanf("%d", &opc);
             if(opc < 0 || opc > 4) {
                 system("cls");
                 printf("Opção inválida!\n\n");
             }
         }while(opc < 0 || opc > 4);
+        jogador.movimentos = 0;
         if(opc != 0)
             for(int i=0; i<LINHAS; i++)
                 for(int j=0; j<COLUNAS; j++)
@@ -535,16 +628,17 @@ bool menu() {
                     opcBuscaCega(matBusca);
                     break;
                 case 2:
-                    opcBuscaHeuristica1(matBusca);
+                    opcBuscaHeuristica(matBusca);
                     break;
                 case 3:
-                    printLabirinto(&lab);
+                    opcBuscaPensada(matBusca);
                     break;
                 case 4:
-                    imprimeMatriz();
+                    printLabirinto(&lab);
                     break;
                 case 0:
-                    liberaPonteiros() ;
+                    fclose(arq);
+                    liberaPonteiros();
                     return true;
         }
     }while(1);
@@ -553,7 +647,5 @@ bool menu() {
 int main() {
     setlocale(LC_ALL, "");
     iniciaLabirinto();
-
     return menu();
-    //return jogo();
 }
