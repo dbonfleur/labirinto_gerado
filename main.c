@@ -12,6 +12,8 @@ typedef struct Jogador {
     int posIniy;
     int posFimx;
     int posFimy;
+    int desenhox;
+    int desenhoy;
     int movimentos;
 } Jogador;
 
@@ -293,6 +295,8 @@ void iniciaLabirinto() {
     jogador.posIniy = (ALTURA*2)+1;
     jogador.posFimx = (LARGURA*2)+1;
     jogador.posFimy = (end*2)+1;
+    jogador.desenhox = (3*ini)+1;
+    jogador.desenhoy = (ALTURA*2)+1;
 
     matrizLab[(end*2)+1][LARGURA*2] = 0;
     matrizLab[(end*2)+1][(LARGURA*2)+1] = 3;
@@ -607,17 +611,106 @@ void opcBuscaPensada(int matBusca[][COLUNAS]) {
     }
 }
 
-bool menu() {
+void gotoxy(int x, int y) {
+     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),(COORD){x,y});
+}
+
+int testVencer(int posix) {
+    if(posix >= (LARGURA*2)+1)
+        return 1;
+    return 0;
+}
+
+int jogarLabirinto(int matBusca[][COLUNAS]) {
+    int flagMov = 1, flagDesenho = 1;
+    char opc;
+    jogador.movimentos = 0;
+    int posix = jogador.posInix;
+    int posiy = jogador.posIniy;
+    printLabirinto(&lab);
+    do {
+        if(flagDesenho) {
+            gotoxy(jogador.desenhox, jogador.desenhoy);
+            printf("##");
+            flagDesenho = 0;
+        }
+        opc = getch();
+        switch(opc) {
+            case 'w':       //Acima
+                if(jogador.posIniy-2 >= 0) {
+                    if(matBusca[jogador.posIniy-1][jogador.posInix] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
+                        printf("/\\");
+                        flagDesenho = 1;
+                        matBusca[jogador.posIniy][jogador.posInix] = 0;
+                        jogador.posIniy-=2;
+                        matBusca[jogador.posIniy][jogador.posInix] = 2;
+                        jogador.desenhoy-=2;
+                        jogador.movimentos+=2;
+                    }
+                }
+                break;
+            case 'a':       //Esquerdo
+                if(jogador.posInix-2 >= 0) {
+                    if(matBusca[jogador.posIniy][jogador.posInix-1] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
+                        printf("<-");
+                        flagDesenho = 1;
+                        matBusca[jogador.posIniy][jogador.posInix] = 0;
+                        jogador.posInix-=2;
+                        matBusca[jogador.posIniy][jogador.posInix] = 2;
+                        jogador.desenhox-=3;
+                        jogador.movimentos+=2;
+                    }
+                }
+                break;
+            case 's':       //Abaixo
+                if(jogador.posIniy+2 <= (ALTURA*2)) {
+                    if(matBusca[jogador.posIniy+1][jogador.posInix] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
+                        printf("\\/");
+                        flagDesenho = 1;
+                        matBusca[jogador.posIniy][jogador.posInix] = 0;
+                        jogador.posIniy+=2;
+                        matBusca[jogador.posIniy][jogador.posInix] = 2;
+                        jogador.desenhoy+=2;
+                        jogador.movimentos+=2;
+                    }
+                }
+                break;
+            case 'd':       //Direita
+                if(jogador.posInix+2 <= (LARGURA*2)+1) {
+                    if(matBusca[jogador.posIniy][jogador.posInix+1] == 0) {
+                        gotoxy(jogador.desenhox, jogador.desenhoy);
+                        printf("->");
+                        flagDesenho = 1;
+                        matBusca[jogador.posIniy][jogador.posInix] = 0;
+                        jogador.posInix+=2;
+                        matBusca[jogador.posIniy][jogador.posInix] = 2;
+                        jogador.desenhox+=3;
+                        jogador.movimentos+=2;
+                    }
+                }
+        }
+    }while(!testVencer(jogador.posInix) && opc != 'x');
+    system("cls");
+    printf("Você finalizou o labirinto com %d movimentos!\n\n", jogador.movimentos);
+    jogador.movimentos = 0;
+    jogador.posInix = posix;
+    jogador.posIniy = posiy;
+}
+
+ bool menu() {
     int opc, matBusca[LINHAS][COLUNAS];
     do {
         do{
-            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Realizar Busca Heurística. (*A)\n\t(3)Realizar Busca Pensada (Profunda Aleatória Guiada)\n\t(4)Imprimir Labirinto.\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
+            printf("#-=-=-=-=-| Labirinto %dx%d |-=-=-=-=-=-#\n\t(1)Realizar Busca Cega. (Profundidade)\n\t(2)Realizar Busca Heurística. (*A)\n\t(3)Realizar Busca Pensada (Profunda Aleatória Guiada)\n\t(4)Imprimir Labirinto.\n\t(5)Jogar Labirinto\n\t(0)Sair.\n#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-#\n\n\tOpção: ", ALTURA, LARGURA);
             scanf("%d", &opc);
-            if(opc < 0 || opc > 4) {
+            if(opc < 0 || opc > 5) {
                 system("cls");
                 printf("Opção inválida!\n\n");
             }
-        }while(opc < 0 || opc > 4);
+        }while(opc < 0 || opc > 5);
         jogador.movimentos = 0;
         if(opc != 0)
             for(int i=0; i<LINHAS; i++)
@@ -635,6 +728,9 @@ bool menu() {
                     break;
                 case 4:
                     printLabirinto(&lab);
+                    break;
+                case 5:
+                    jogarLabirinto(matBusca);
                     break;
                 case 0:
                     fclose(arq);
